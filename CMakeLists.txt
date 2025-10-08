@@ -4,6 +4,9 @@ project(vs LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(MY_BUILD_TESTS ON)
+set(BUILD_BENCHMARKS ON)
+
 # optimization flags
 add_compile_options("-march=native")
 add_compile_options("-ffast-math")
@@ -32,7 +35,6 @@ endif()
 include(${CPM_DOWNLOAD_LOCATION})
 CPMAddPackage("gh:doctest/doctest@2.4.9")
 
-
 set(BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
 set(FINUFFT_BUILD_TESTS OFF CACHE BOOL "Whether to build the FINUFFT tests" FORCE)
 CPMAddPackage("gh:flatironinstitute/finufft@2.4.1")
@@ -41,6 +43,15 @@ install(DIRECTORY include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING PATTERN "*.hpp")
 
-add_executable(nudft_test test/nudft.cpp)
-target_link_libraries(nudft_test PUBLIC OpenMP::OpenMP_CXX fftw3 finufft doctest)
-target_include_directories(nudft_test PRIVATE ${doctest_SOURCE_DIR}/doctest)
+if(MY_BUILD_TESTS)
+  enable_testing()
+  add_executable(nudft_test test/nudft.cpp)
+  target_link_libraries(nudft_test PUBLIC OpenMP::OpenMP_CXX fftw3 finufft doctest)
+  target_include_directories(nudft_test PRIVATE ${doctest_SOURCE_DIR}/doctest)
+  add_test(NAME nudft_test COMMAND nudft_test)
+endif()
+
+if(BUILD_BENCHMARKS)
+  add_executable(nudft_vs_nufft benchmark/nudft_vs_nufft.cpp)
+  target_link_libraries(nudft_vs_nufft PUBLIC OpenMP::OpenMP_CXX fftw3 finufft)
+endif()

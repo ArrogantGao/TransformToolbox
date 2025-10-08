@@ -36,7 +36,7 @@ namespace transtb {
     }
 
     template<typename T>
-    void nudft3d1_s3(const int M, T* x, T* y, T* z, complex<T>* c, const int iflag, const int N1, const int N2, const int N3, complex<T>* f){
+    void nudft3d1(const int M, T* x, T* y, T* z, complex<T>* c, const int iflag, const int N1, const int N2, const int N3, complex<T>* f){
         std::vector<complex<T>> x_cache(N1);
         std::vector<complex<T>> y_cache(N2);
         std::vector<complex<T>> z_cache(N3);

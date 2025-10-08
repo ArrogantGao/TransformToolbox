@@ -43,7 +43,7 @@ TEST_CASE("Test nudft3d1") {
 
                     transtb::nudft3d1_s2(M, x.data(), y.data(), z.data(), c.data(), iflag, N1, N2, N3, f_s2.data());
                     
-                    transtb::nudft3d1_s3(M, x.data(), y.data(), z.data(), c.data(), iflag, N1, N2, N3, f_s3.data());
+                    transtb::nudft3d1(M, x.data(), y.data(), z.data(), c.data(), iflag, N1, N2, N3, f_s3.data());
 
                     for (int i = 0; i < N1 * N2 * N3; i++){
                         CHECK(abs(f_s3[i] - f_ref[i]) < 1e-4);
