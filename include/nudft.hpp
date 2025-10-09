@@ -86,6 +86,44 @@ namespace transtb {
         }
     }
 
+    template<typename T>
+    void nudft3d1_iterate(const int M, T* x, T* y, T* z, complex<T>* c, const int iflag, const int N1, const int N2, const int N3, complex<T>* f){
+        T iflag_sign = iflag > 0 ? 1 : -1;
+
+        for (int i = 0; i < M; i++){
+            auto xi = x[i];
+            auto yi = y[i];
+            auto zi = z[i];
+            auto ci = c[i];
+
+            auto exp_x0 = exp(complex<T>(0, iflag_sign * xi));
+            auto exp_y0 = exp(complex<T>(0, iflag_sign * yi));
+            auto exp_z0 = exp(complex<T>(0, iflag_sign * zi));
+            
+            double kx_min = - N1 / 2;
+            double ky_min = - N2 / 2;
+            double kz_min = - N3 / 2;
+
+            auto exp_xmin= exp(complex<T>(0, iflag_sign * xi * (kx_min))) * ci;
+            auto exp_ymin = exp(complex<T>(0, iflag_sign * yi * (ky_min)));
+            auto exp_zmin = exp(complex<T>(0, iflag_sign * zi * (kz_min)));
+
+            auto exp_z = exp_zmin;
+            for (int n = 0; n < N3; n++){
+                auto exp_y = exp_ymin;
+                for (int m = 0; m < N2; m++){
+                    auto exp_x = exp_xmin;
+                    for (int l = 0; l < N1; l++){
+                        f[n * N2 * N1 + m * N1 + l] += exp_z * exp_y * exp_x;
+                        exp_x *= exp_x0;
+                    }
+                    exp_y *= exp_y0;
+                }
+                exp_z *= exp_z0;
+            }
+        }
+    }
+
     // slice the output array as 2D planes when computing
     template<typename T>
     void nudft3d1_s2(const int M, T* x, T* y, T* z, complex<T>* c, const int iflag, const int N1, const int N2, const int N3, complex<T>* f){
