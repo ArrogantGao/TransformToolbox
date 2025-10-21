@@ -35,52 +35,58 @@ namespace transtb {
         }
     }
 
-    template<typename T>
-    void nudft3d1(const int M, T* x, T* y, T* z, complex<T>* c, const int iflag, const int N1, const int N2, const int N3, complex<T>* f){
-        std::vector<complex<T>> x_cache(N1);
-        std::vector<complex<T>> y_cache(N2);
-        std::vector<complex<T>> z_cache(N3);
+    template <typename T>
+    inline void nudft3d1(const int M,
+                                const T* __restrict x,
+                                const T* __restrict y,
+                                const T* __restrict z,
+                                const std::complex<T>* __restrict c,
+                                const int iflag,
+                                const int N1, const int N2, const int N3,
+                                std::complex<T>* __restrict f) {
 
-        T iflag_sign = iflag > 0 ? 1 : -1;
+        using complex_t = std::complex<T>;
+        const T iflag_sign = (iflag > 0) ? 1 : -1;
 
-        for (int i = 0; i < M; i++){
-            auto xi = x[i];
-            auto yi = y[i];
-            auto zi = z[i];
-            auto ci = c[i];
+        std::vector<complex_t> x_cache(N1);
+        std::vector<complex_t> y_cache(N2);
+        std::vector<complex_t> z_cache(N3);
 
-            auto exp_x0 = exp(complex<T>(0, iflag_sign * xi));
-            auto exp_y0 = exp(complex<T>(0, iflag_sign * yi));
-            auto exp_z0 = exp(complex<T>(0, iflag_sign * zi));
-            
-            double kx_min = - N1 / 2;
-            double ky_min = - N2 / 2;
-            double kz_min = - N3 / 2;
+        const T kx_min = - N1 / 2;
+        const T ky_min = - N2 / 2;
+        const T kz_min = - N3 / 2;
 
-            x_cache[0] = exp(complex<T>(0, iflag_sign * xi * (kx_min))) * ci;
-            y_cache[0] = exp(complex<T>(0, iflag_sign * yi * (ky_min)));
-            z_cache[0] = exp(complex<T>(0, iflag_sign * zi * (kz_min)));
+        // #pragma omp parallel for schedule(static)
+        for (int i = 0; i < M; ++i) {
+            const T xi = x[i];
+            const T yi = y[i];
+            const T zi = z[i];
+            const complex_t ci = c[i];
 
-            for (int l = 1; l < N1; l++){
-                x_cache[l] = x_cache[l - 1] * exp_x0;
-            }
+            const complex_t exp_x_step = std::exp(complex_t(0, iflag_sign * xi));
+            const complex_t exp_y_step = std::exp(complex_t(0, iflag_sign * yi));
+            const complex_t exp_z_step = std::exp(complex_t(0, iflag_sign * zi));
 
-            for (int m = 1; m < N2; m++){
-                y_cache[m] = y_cache[m - 1] * exp_y0;
-            }
+            x_cache[0] = std::exp(complex_t(0, iflag_sign * xi * kx_min)) * ci;
+            for (int l = 1; l < N1; ++l)
+                x_cache[l] = x_cache[l - 1] * exp_x_step;
 
-            for (int n = 1; n < N3; n++){
-                z_cache[n] = z_cache[n - 1] * exp_z0;
-            }
+            y_cache[0] = std::exp(complex_t(0, iflag_sign * yi * ky_min));
+            for (int m = 1; m < N2; ++m)
+                y_cache[m] = y_cache[m - 1] * exp_y_step;
 
-            complex<T> temp_z, temp_zy;
-            for (int n = 0; n < N3; n++){
-                temp_z = z_cache[n];
-                for (int m = 0; m < N2; m++){
-                    temp_zy = temp_z * y_cache[m];
-                    for (int l = 0; l < N1; l++){
-                        f[n * N2 * N1 + m * N1 + l] += temp_zy * x_cache[l];
-                    }
+            z_cache[0] = std::exp(complex_t(0, iflag_sign * zi * kz_min));
+            for (int n = 1; n < N3; ++n)
+                z_cache[n] = z_cache[n - 1] * exp_z_step;
+
+            for (int n = 0; n < N3; ++n) {
+                const complex_t z_val = z_cache[n];
+                for (int m = 0; m < N2; ++m) {
+                    const complex_t zy_val = z_val * y_cache[m];
+                    complex_t* __restrict fptr = f + (n * N2 + m) * N1;
+                    #pragma omp simd
+                    for (int l = 0; l < N1; ++l)
+                        fptr[l] += zy_val * x_cache[l];
                 }
             }
         }

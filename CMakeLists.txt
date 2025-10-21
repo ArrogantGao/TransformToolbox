@@ -52,6 +52,14 @@ if(MY_BUILD_TESTS)
 endif()
 
 if(BUILD_BENCHMARKS)
+  set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+  FetchContent_Declare(
+    benchmark
+    URL https://github.com/google/benchmark/archive/refs/heads/main.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  )
+  FetchContent_MakeAvailable(benchmark)
+
   add_executable(nudft_vs_nufft benchmark/nudft_vs_nufft.cpp)
-  target_link_libraries(nudft_vs_nufft PUBLIC OpenMP::OpenMP_CXX fftw3 finufft)
+  target_link_libraries(nudft_vs_nufft PUBLIC OpenMP::OpenMP_CXX fftw3 finufft benchmark::benchmark)
 endif()
